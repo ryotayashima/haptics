@@ -2,6 +2,7 @@
 from core_tool import *
 import rospy
 from geometry_msgs.msg import PoseStamped
+from omni_msgs.msg import OmniState
 import time
 
 def Help():
@@ -10,25 +11,22 @@ def Help():
   Usage: haptics.position'''
 
 def Run(ct, *args):
-  flag = 0
   x = ct.robot.FK()
 
   def move(msg):
-    tmp = []
-    tmp.append(msg.pose.position.x)
-    tmp.append(msg.pose.position.y)
-    tmp.append(msg.pose.position.z)
-    time.sleep(0.25)
-    tmp[0] = msg.pose.position.x - tmp[0]
-    tmp[1] = msg.pose.position.y - tmp[1]
-    tmp[2] = msg.pose.position.z - tmp[2]
-    x[0] += tmp[0]
-    x[1] += tmp[1]
-    x[2] += tmp[2]
-    ct.robot.MoveToX(x, 0.25)
+    rate = 1e-3 * 2
+    rospy.loginfo(msg.velocity)
+    # x[0] += msg.velocity.x * rate
+    # x[1] += msg.velocity.y * rate
+    # x[2] += msg.velocity.z * rate
+    x[0] += rate if msg.velocity.x>0 else -rate
+    x[1] += rate if msg.velocity.y>0 else -rate
+    x[2] += rate if msg.velocity.z>0 else -rate
+    ct.robot.MoveToX(x, 0.1)
 
-  sub = rospy.Subscriber('/phantom/pose', PoseStamped, move)
+  sub = rospy.Subscriber('/phantom/state', OmniState, move)
 
-  r = rospy.Rate(2)
-  while not rospy.is_shutdown():
-    r.sleep()
+  rospy.spin()
+  # r = rospy.Rate(0.5)
+  # while not rospy.is_shutdown():
+  #   r.sleep()
