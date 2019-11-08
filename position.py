@@ -5,6 +5,8 @@ import tf
 from geometry_msgs.msg import PoseStamped
 from omni_msgs.msg import OmniState
 import time
+import math
+import numpy as np
 
 def Help():
 
@@ -29,25 +31,53 @@ def Run(ct, *args):
     cont(msg.velocity.z, 2, rate)
     
     origin = [x[i+3] for i in range(4)]
+    # haps = [
+    #   msg.pose.orientation.x,
+    #   msg.pose.orientation.y,
+    #   msg.pose.orientation.z,
+    #   msg.pose.orientation.w  
+    # ]
+    # haps = [
+    #   msg.pose.orientation.z,
+    #   msg.pose.orientation.x,
+    #   msg.pose.orientation.y,
+    #   msg.pose.orientation.w  
+    # ]
     haps = [
-      msg.pose.orientation.x,
-      msg.pose.orientation.y,
       msg.pose.orientation.z,
+      msg.pose.orientation.y,
+      msg.pose.orientation.x,
       msg.pose.orientation.w  
     ]
 
+    # rotationX90 = tf.transformations.quaternion_about_axis(-math.pi/2, [1,0,0])
+    # rotationX90 = rotationX90.tolist()
     rotationY90 = tf.transformations.quaternion_about_axis(math.pi/2, [0,1,0])
     rotationY90 = rotationY90.tolist()
+    # rotationZ90 = tf.transformations.quaternion_about_axis(math.pi/2, [0,0,1])
+    # rotationZ90 = rotationZ90.tolist()
+    # rotation = tf.transformations.quaternion_multiply(rotationY90, rotationX90)
+    # rotation = tf.transformations.quaternion_multiply(rotation, rotationZ90)
+    rotation = rotationY90
 
-    new = tf.transformations.quaternion_multiply(origin, haps)
-    new = tf.transformations.quaternion_multiply(haps, rotationY90)
+    # new = tf.transformations.quaternion_multiply(origin, haps)
+    new = tf.transformations.quaternion_multiply(haps, rotation)
+    # new = haps
+
+    # inverse = []
+    # for i, component in enumerate(new):
+    #   if i!=3:
+    #     inverse.append(-component)
+    #   else:
+    #     inverse.append(component)
+    # inverse = np.array(inverse)
+    # norm = np.linalg.norm(inverse, 2)
+    # inverse = list(inverse)
+    # inverse = [i/norm for i in inverse]
+    # new = inverse
 
     for i, component in enumerate(new):
       x[i+3] = component
-    # x[3] += msg.pose.orientation.x
-    # x[4] += msg.pose.orientation.y
-    # x[5] += msg.pose.orientation.z
-    # x[6] += msg.pose.orientation.w
     ct.robot.MoveToX(x, 0.1)
 
   sub = rospy.Subscriber('/phantom/state', OmniState, move)
@@ -55,5 +85,3 @@ def Run(ct, *args):
   # r = rospy.Rate(0.5)
   # while not rospy.is_shutdown():
   #   r.sleep()
-
-  # movex [0.45000740211100976, 9.2708276568646815e-07, 0.49999834857096287, 0.025, 0.02571235660000027, -0.7, 0.7]
