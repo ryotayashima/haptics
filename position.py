@@ -31,38 +31,56 @@ def Run(ct, *args):
     cont(msg.velocity.z, 2, rate)
     
     origin = [x[i+3] for i in range(4)]
-    # haps = [
-    #   msg.pose.orientation.x,
-    #   msg.pose.orientation.y,
-    #   msg.pose.orientation.z,
-    #   msg.pose.orientation.w  
-    # ]
-    # haps = [
-    #   msg.pose.orientation.z,
-    #   msg.pose.orientation.x,
-    #   msg.pose.orientation.y,
-    #   msg.pose.orientation.w  
-    # ]
     haps = [
       msg.pose.orientation.x,
-      -msg.pose.orientation.z,
       msg.pose.orientation.y,
+      msg.pose.orientation.z,
       msg.pose.orientation.w  
     ]
+    # haps = [
+    #   msg.pose.orientation.z,
+    #   msg.pose.orientation.y,
+    #   msg.pose.orientation.x,
+    #   msg.pose.orientation.w  
+    # ]
+    # haps = [
+    #   msg.pose.orientation.x,
+    #   -msg.pose.orientation.z,
+    #   msg.pose.orientation.y,
+    #   msg.pose.orientation.w  
+    # ]
+    # haps = [
+    #   -msg.pose.orientation.y,
+    #   msg.pose.orientation.w,
+    #   -msg.pose.orientation.x,
+    #   -msg.pose.orientation.z  
+    # ]
 
-    # rotationX90 = tf.transformations.quaternion_about_axis(-math.pi/2, [1,0,0])
-    # rotationX90 = rotationX90.tolist()
-    # rotationY90 = tf.transformations.quaternion_about_axis(-math.pi/2, [0,1,0])
-    # rotationY90 = rotationY90.tolist()
-    # rotationZ90 = tf.transformations.quaternion_about_axis(math.pi/2, [0,0,1])
-    # rotationZ90 = rotationZ90.tolist()
+    rotationX90 = tf.transformations.quaternion_about_axis(-math.pi/2, [1,0,0])
+    rotationX90 = rotationX90.tolist()
+    rotationY90 = tf.transformations.quaternion_about_axis(math.pi/2, [0,1,0])
+    rotationY90 = rotationY90.tolist()
+    # rotationY180 = tf.transformations.quaternion_about_axis(math.pi, [0,1,0])
+    # rotationY180 = rotationY180.tolist()
+    rotationZ90 = tf.transformations.quaternion_about_axis(math.pi/2, [0,0,1])
+    rotationZ90 = rotationZ90.tolist()
     # rotation = tf.transformations.quaternion_multiply(rotationY90, rotationX90)
-    # rotation = tf.transformations.quaternion_multiply(rotation, rotationZ90)
-    # rotation = rotationZ90
+
+    rotation = tf.transformations.quaternion_multiply(rotationY90, haps)
+    rotation = tf.transformations.quaternion_multiply(rotationX90, rotation)
+    rotation = tf.transformations.quaternion_multiply(rotationZ90, rotation)
+    rotation = tf.transformations.quaternion_multiply(rotationZ90, rotation)
+    # rotation = tf.transformations.quaternion_multiply(rotationY180, rotation)
+    new = rotation
+
+    new[1] = -new[1]
+    new[2] = -new[2]
+
+    # rotation = rotationY90
 
     # new = tf.transformations.quaternion_multiply(origin, haps)
     # new = tf.transformations.quaternion_multiply(rotation, haps)
-    new = haps
+    # new = haps
 
     # inverse = []
     # for i, component in enumerate(new):
