@@ -10,7 +10,7 @@ import numpy as np
 
 def Help():
 
-  return '''Position contorl script by haptics.
+  return '''Motoman's position contorl script by haptics.
   Usage: haptics.position'''
 
 def Run(ct, *args):
@@ -24,7 +24,7 @@ def Run(ct, *args):
       x[i] += vel*rate
 
   def move(msg):
-    rate = 1e-4*1.5
+    rate = 1e-4*4
     rospy.loginfo(msg.velocity)
     cont(msg.velocity.x, 1, -rate)
     cont(msg.velocity.y, 0, rate)

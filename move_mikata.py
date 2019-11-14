@@ -3,19 +3,23 @@ from core_tool import *
 import rospy
 import tf
 from geometry_msgs.msg import PoseStamped
-from omni_msgs.msg import OmniState
+from omni_msgs.msg import OmniState, OmniButtonEvent
 import time
 import math
 import numpy as np
 
 def Help():
 
-  return '''Position contorl script by haptics.
+  return '''Mikata6's position contorl script by haptics.
   Usage: haptics.position'''
 
 def Run(ct, *args):
       
   x = ct.robot.FK()
+  if len(args) == 1:
+    rate = 1e-4 * args[0]
+  elif len(args) == 0:
+    rate = 1e-4 * 1.2
 
   def cont(vel, i, rate):
     if abs(vel) < 1.0:
@@ -24,38 +28,40 @@ def Run(ct, *args):
       x[i] += vel*rate
 
   def move(msg):
-    rate = 1e-4*1.5
-    rospy.loginfo(msg.velocity)
-    cont(msg.velocity.x, 1, -rate)
-    cont(msg.velocity.y, 0, rate)
-    cont(msg.velocity.z, 2, rate)
-    
-    haps = [
-      msg.pose.orientation.x,
-      msg.pose.orientation.y,
-      msg.pose.orientation.z,
-      msg.pose.orientation.w  
-    ]
-    
-    rotationX90 = tf.transformations.quaternion_about_axis(-math.pi/2, [1,0,0])
-    rotationX90 = rotationX90.tolist()
-    rotationY90 = tf.transformations.quaternion_about_axis(math.pi/2, [0,1,0])
-    rotationY90 = rotationY90.tolist()
-    rotationZ90 = tf.transformations.quaternion_about_axis(math.pi/2, [0,0,1])
-    rotationZ90 = rotationZ90.tolist()
 
-    rotation = tf.transformations.quaternion_multiply(rotationY90, haps)
-    rotation = tf.transformations.quaternion_multiply(rotationX90, rotation)
-    rotation = tf.transformations.quaternion_multiply(rotationZ90, rotation)
-    rotation = tf.transformations.quaternion_multiply(rotationZ90, rotation)
-
-    new = rotation
-    new[1] = -new[1]
-    new[2] = -new[2]
-
-    for i, component in enumerate(new):
-      x[i+3] = component
-    ct.robot.MoveToX(x, 0.1)
+    if msg.locked==False:
+      #### Position ###
+      rospy.loginfo(msg.velocity)
+      cont(msg.velocity.x, 1, -rate)
+      cont(msg.velocity.y, 0, rate)
+      cont(msg.velocity.z, 2, rate)
+      ### Quaternion ###
+      haps = [
+        msg.pose.orientation.x,
+        msg.pose.orientation.y,
+        msg.pose.orientation.z,
+        msg.pose.orientation.w  
+      ]
+      tmpx = haps[0]
+      tmpy = haps[1]
+      haps[0] = -haps[2]
+      haps[1] = -tmpx
+      haps[2] = tmpy
+      haps[3] = haps[3]
+      new = haps
+      ### Griper ###
+      if msg.close_gripper==True and ct.robot.GripperPos()<0.075:
+        ct.robot.MoveGripper(0.1,blocking=True)
+      elif msg.close_gripper==False and ct.robot.GripperPos()>0.075:
+        ct.robot.MoveGripper(0.05,blocking=True)
+      else:
+        pass
+      ### Move ### 
+      for i, component in enumerate(new):
+        x[i+3] = component
+      ct.robot.MoveToX(x, 0.1)
+    else:
+      pass
 
   sub = rospy.Subscriber('/phantom/state', OmniState, move)
   rospy.spin()
