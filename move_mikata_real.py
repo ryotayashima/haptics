@@ -2,11 +2,12 @@
 from core_tool import *
 import rospy
 import tf
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Vector3
 from omni_msgs.msg import OmniState, OmniButtonEvent
 import time
 import math
 import numpy as np
+import copy
 
 def Help():
 
@@ -14,8 +15,14 @@ def Help():
   Usage: haptics.move_mikata_real'''
 
 
-def Callback(rate, steps, wsteps, state, msg):
+def quaternion_to_euler(quaternion):
+  e = tf.transformations.euler_from_quaternion((quaternion[0], quaternion[1], quaternion[2], quaternion[3]))
+  return e[0], e[1], e[2]
+
+
+def Callback(rate, steps, wsteps_before, wsteps, wsteps_def, state, msg):
   steps[:] = [0.0]*3
+  wsteps_before[:] = copy.deepcopy(wsteps)
   wsteps[:] = [0.0]*3
   state[:] = ['run', 0]
 
@@ -25,6 +32,19 @@ def Callback(rate, steps, wsteps, state, msg):
   steps[1] = -rate * msg.velocity.x if abs(msg.velocity.x)>1.0 else 0.0
   steps[2] = rate * msg.velocity.z if abs(msg.velocity.z)>1.0 else 0.0
 
+  haps = [msg.pose.orientation.x,
+          msg.pose.orientation.y,
+          msg.pose.orientation.z,
+          msg.pose.orientation.w]
+  tmpx = haps[0]
+  tmpy = haps[1]
+  haps[0] = -haps[2]
+  haps[1] = -tmpx
+  haps[2] = tmpy
+  haps[3] = haps[3]
+  wsteps[:] = quaternion_to_euler(haps)
+  wsteps_def[:] = [wsteps[i]-wsteps_before[i] for i in range(3)]
+
 
 def Run(ct, *args):
   if len(args) == 1:
@@ -33,7 +53,9 @@ def Run(ct, *args):
     rate = 1e-4 * 1.2
 
   steps = [0.0, 0.0, 0.0]
+  wsteps_before = [0.0, 0.0, 0.0]
   wsteps = [0.0, 0.0, 0.0]
+  wsteps_def = [0.0, 0.0, 0.0]
   state = ['run', 0]
   speed_gain= 10.0
 
@@ -42,7 +64,7 @@ def Run(ct, *args):
   if any(is_dxlg):
     active_holding= [False]*ct.robot.NumArms
 
-  ct.AddSub('/phantom/state', '/phantom/state', OmniState, lambda msg: Callback(rate, steps, wsteps, state, msg))
+  ct.AddSub('/phantom/state', '/phantom/state', OmniState, lambda msg: Callback(rate, steps, wsteps_before, wsteps, wsteps_def, state, msg))
   velctrl= [ct.Run('velctrl',a) for a in range(ct.robot.NumArms)]
   suppress_velctrl= False
 
@@ -58,7 +80,7 @@ def Run(ct, *args):
           break
 
         q= ct.robot.Q(arm=arm)
-        vx= map(lambda b:speed_gain*0.4*b,steps)+map(lambda c:speed_gain*1.0*c,[0.0,0.0,0.0])
+        vx= map(lambda b:speed_gain*0.6*b,steps)+map(lambda c:speed_gain*1.1*c,wsteps_def)
         if ct.robot.DoF(arm=arm)>=6:
           dq= ToList(la.pinv(ct.robot.J(q,arm=arm))*MCVec(vx))
         else:  #e.g. Mikata Arm
@@ -72,7 +94,7 @@ def Run(ct, *args):
 
         if not suppress_velctrl:
           velctrl[arm].Step(dq)
-          rospy.loginfo(steps)
+          # rospy.loginfo(wsteps_def)
       else:
         pass
 
