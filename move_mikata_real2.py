@@ -10,7 +10,8 @@ import numpy as np
 
 def Help():
 
-  return '''Mikata's position contorl script by haptics.
+  return '''real Mikata's position contorl script by haptics.
+  This script will do 'ct.robot.MoveToX(x, 0.1)'.
   Usage: haptics.position'''
 
 def Run(ct, *args):
@@ -65,6 +66,6 @@ def Run(ct, *args):
 
   sub = rospy.Subscriber('/phantom/state', OmniState, move)
   rospy.spin()
-  # r = rospy.Rate(0.5)
+  # r = rospy.Rate(10)
   # while not rospy.is_shutdown():
   #   r.sleep()

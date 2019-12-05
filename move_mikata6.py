@@ -10,7 +10,7 @@ import numpy as np
 
 def Help():
 
-  return '''Mikata's position contorl script by haptics.
+  return '''Mikata6's position contorl script by haptics.
   Usage: haptics.position'''
 
 def Run(ct, *args):
