@@ -10,14 +10,17 @@ import numpy as np
 
 def Help():
 
-  return '''Mikata6's default position for haptics.
-  Usage: haptics.position'''
+  return '''Mikata's default position for haptics.
+  Usage: haptics.def_mikata'''
 
 def Run(ct, *args):
   
-  #ct.Run('grip', 0.05)
-  # print ct.robot.GripperPos()
-  ct.robot.MoveGripper(0.05,blocking=True)
-  x_def = [0.25, -0.01, 0.06, 0.0, 0.0, 0.0, 1.0]
+  x_def = [0.059006140732741963,
+           -0.0016296713292546724,
+           0.12926543907595478,
+           0.00037055650369856058,
+           0.026838881738960561,
+           -0.013800414496973199,
+           0.99954443906941504]
   ct.robot.MoveToX(x_def, 2.0)
   

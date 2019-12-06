@@ -4,9 +4,9 @@ import rospy
 
 def Help():
     
-  return '''Mikata's initial position for haptics.
-  Usage: haptics.init_mikata'''
+  return '''Mikata6's initial position for haptics.
+  Usage: haptics.position'''
 
 def Run(ct, *args):
-  q_init = [0]*4
+  q_init = [0]*6
   ct.robot.MoveToQ(q_init, 2.0)

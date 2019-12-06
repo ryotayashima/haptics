@@ -80,7 +80,7 @@ def Run(ct, *args):
           break
 
         q= ct.robot.Q(arm=arm)
-        vx= map(lambda b:speed_gain*0.6*b,steps)+map(lambda c:speed_gain*1.1*c,wsteps_def)
+        vx= map(lambda b:speed_gain*1.0*b,steps)+map(lambda c:speed_gain*1.1*c,wsteps_def)
         if ct.robot.DoF(arm=arm)>=6:
           dq= ToList(la.pinv(ct.robot.J(q,arm=arm))*MCVec(vx))
         else:  #e.g. Mikata Arm
@@ -94,9 +94,34 @@ def Run(ct, *args):
 
         if not suppress_velctrl:
           velctrl[arm].Step(dq)
-          # rospy.loginfo(wsteps_def)
+          # rospy.loginfo(len(ct.robot.Q(arm=arm)))
       else:
-        pass
+        if kbhit.IsActive():
+          key= kbhit.KBHit()
+          if key=='q':
+            break
+          elif key is not None:
+            state[1] = 'key_'+str(key)
+        else:
+          break
+        if state[1]=='key_d':
+          dq = [0]*len(ct.robot.Q(arm=arm))
+          dq[0] = -0.15
+          if not suppress_velctrl:
+            velctrl[arm].Step(dq)
+        if state[1]=='key_a':
+          dq = [0]*len(ct.robot.Q(arm=arm))
+          dq[0] = 0.15
+          if not suppress_velctrl:
+            velctrl[arm].Step(dq)
+        if state[1]=='key_o':
+          ct.robot.MoveGripper(0.1, blocking=True)
+        if state[1]=='key_c':
+          grip_sate = ct.robot.GripperPos()
+          if grip_sate >= 0.001:
+            grip_sate -= 0.02
+            ct.robot.MoveGripper(grip_sate, blocking=True)
+          
 
   finally:
     kbhit.Deactivate()
